@@ -1,0 +1,114 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Represents a user slot tracking name, phone number, and allocated API copywriting credits.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique user ID identifier starting with USR-."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the affiliate member."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact WhatsApp phone number."
+        },
+        "credits": {
+          "type": "integer",
+          "description": "Remaining count of AI script generations."
+        }
+      },
+      "required": ["id", "name", "phone", "credits"]
+    },
+    "TopUpTransaction": {
+      "title": "TopUpTransaction",
+      "description": "Ledger entry tracking credit topups and payment verification statuses.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique transaction key starting with TX-."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference identifier of the purchasing user profile."
+        },
+        "userName": {
+          "type": "string",
+          "description": "Purchaser name."
+        },
+        "userPhone": {
+          "type": "string",
+          "description": "Purchaser phone."
+        },
+        "packageName": {
+          "type": "string",
+          "description": "Name and description of selected credit package."
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Represents the dynamic cost in IDR."
+        },
+        "creditsGained": {
+          "type": "integer",
+          "description": "Count of credits granted upon approval."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "APPROVED", "REJECTED"],
+          "description": "Current authorization state."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "userName",
+        "userPhone",
+        "packageName",
+        "amount",
+        "creditsGained",
+        "status",
+        "createdAt"
+      ]
+    },
+    "ScrapedTrendsCache": {
+      "title": "ScrapedTrendsCache",
+      "description": "Represents cached product items retrieved via real-time search grounding crawl to optimize quota.",
+      "type": "object",
+      "properties": {
+        "ts": {
+          "type": "integer",
+          "description": "Unix timestamp indicating when the crawl occurred."
+        },
+        "products": {
+          "type": "array",
+          "description": "List of scraped product entities."
+        }
+      },
+      "required": ["ts", "products"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Storage path for affiliate member user profiles."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "TopUpTransaction",
+      "description": "Storage path for credit top-up requests and approvals."
+    },
+    "/scraped_trends/{nicheId}": {
+      "schema": "ScrapedTrendsCache",
+      "description": "Cache database partition minimizing API grounding limits and latency."
+    }
+  }
+}

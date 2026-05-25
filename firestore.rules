@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string 
+        && id.size() >= 3 
+        && id.size() <= 128 
+        && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User Profile collection rules
+    match /users/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if false; // Block user profile lookup directory
+      
+      // Allow creation of profiles only under strict default structures
+      allow create: if isValidId(userId) &&
+        incoming().keys().hasAll(['id', 'name', 'phone', 'credits']) &&
+        incoming().keys().size() == 4 &&
+        incoming().id == userId &&
+        incoming().credits == 5 && // Only allow initial 5 free trial credits
+        incoming().name is string && incoming().name.size() <= 100 &&
+        incoming().phone is string && incoming().phone.size() <= 30;
+
+      // Allow updating only visual settings like name/phone, NEVER credits
+      allow update: if isValidId(userId) &&
+        incoming().id == existing().id &&
+        incoming().credits == existing().credits && // Credits MUST remain immutable for user updates
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone']) &&
+        incoming().name is string && incoming().name.size() <= 100 &&
+        incoming().phone is string && incoming().phone.size() <= 30;
+
+      allow delete: if false;
+    }
+
+    // Transactions collection rules
+    match /transactions/{transactionId} {
+      allow get: if isValidId(transactionId);
+      allow list: if false; // Block listing transactions directly from client
+
+      // Allow users to request topups but with strictly 'PENDING' status
+      allow create: if isValidId(transactionId) &&
+        incoming().keys().hasAll(['id', 'userId', 'userName', 'userPhone', 'packageName', 'amount', 'creditsGained', 'status', 'createdAt']) &&
+        incoming().keys().size() == 9 &&
+        incoming().id == transactionId &&
+        incoming().status == 'PENDING' && // Cannot create a pre-approved transaction
+        incoming().userId is string && incoming().userId.size() <= 128 &&
+        incoming().userName is string && incoming().userName.size() <= 100 &&
+        incoming().userPhone is string && incoming().userPhone.size() <= 30 &&
+        incoming().packageName is string && incoming().packageName.size() <= 200 &&
+        incoming().amount is int && incoming().amount > 0 &&
+        incoming().creditsGained is int && incoming().creditsGained > 0;
+
+      // Client is strictly forbidden from changing transaction records (approvals are backend-only)
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Scraped trends cache rules (strictly backend API-only, clients cannot read/write directly)
+    match /scraped_trends/{nicheId} {
+      allow read, write: if false;
+    }
+  }
+}

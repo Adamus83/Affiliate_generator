@@ -1,0 +1,6 @@
+{
+  "name": "Real-Time Trending Affiliate Engine",
+  "description": "An AI-powered dashboard displaying real-time trending products with viral scoring, automated scraper simulation, and Gemini content generator for catchy affiliate promotional scripts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
